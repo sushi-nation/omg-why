@@ -13,29 +13,41 @@ def compose_earnest_text():
         print(f'Hey {result["name"]["first"]}, will you date geeks?')  # IO
 
 
+"""Sample Structure of a Unit Test
+
+# @fixtures (setup and teardown)
+def test_<function_name>_<two_of_the_Ws>([mocks], [fixture]):
+    # mocks
+    # <function_name> is called
+    # assertions (input/ouput, control flow)
+"""
+
+
 # output + actual requests
-def test_compose_earnest_text_return_none():
+def test1_compose_earnest_text_return_none():
     assert compose_earnest_text() == None
-    # return 'result was male, igoring'
+    # return 'result was male'
 
 
-# output + mocked requests + doesnt actually prove gender logic
-def test_compose_earnest_text_female_only(mocker):
+# output + mocked requests + female returns none
+def test2_compose_earnest_text_returns_string_if_male(mocker):
     mock_get = mocker.patch("requests.get", autospec=True)
     mock_get.return_value.json.return_value = {"results": [{"gender": "male"}]}
     assert compose_earnest_text() == None
 
 
 # output + control flow (result is male)
-def test_compose_earnest_text_not_for_males(mocker):
+def test3_compose_earnest_never_prints_for_male(mocker):
     mock_print = mocker.patch("builtins.print")
     mock_get = mocker.patch("requests.get", autospec=True)
-    mock_get.return_value.json.return_value = {"results": [{"gender": "male"}]}
+    mock_get.return_value.json.return_value = {
+        "results": [{"gender": "male", "name": {"first": "Jay"}}]  # female
+    }
     assert compose_earnest_text() == None
     mock_print.assert_not_called()
 
 # output + control flow (result is female)
-def test_compose_earnest_text_for_females_only(mocker):
+def test4_compose_earnest_text_prints_for_female(mocker):
     mock_print = mocker.patch("builtins.print")
     mock_get = mocker.patch("requests.get", autospec=True)
     mock_get.return_value.json.return_value = {
@@ -52,27 +64,26 @@ def test_compose_earnest_text_for_females_only(mocker):
 def mock_request_and_print(mocker):
     mock_print = mocker.patch("builtins.print")
     mock_get = mocker.patch("requests.get", autospec=True)
-    return mock_print, mock_get
+    return mock_get, mock_print
 
 
-def test_compose_earnest_text_for_femaless_only(mocker, mock_request_and_print):
-    mock_print, mock_get = mock_request_and_print
-    mock_get.return_value.json.return_value = {
+def test5_compose_earnest_text_prints_for_female(mocker, mock_request_and_print):
+    request_user, any_print_calls = mock_request_and_print
+    request_user.return_value.json.return_value = {
         "results": [{"gender": "female", "name": {"first": "FemaleName!"}}]
     }
     assert compose_earnest_text() == None
-    assert mock_print.call_args_list == [
+    assert any_print_calls.call_args_list == [
         mocker.call("=== See Text Below ==="),
         mocker.call("Hey FemaleName!, will you date geeks?"),
     ]
 
-
 # control flow only for no male condition
-def test_compose_earnest_text_not_for_maless(mock_request_and_print):
-    mock_print, mock_get = mock_request_and_print
-    mock_get.return_value.json.return_value = {"results": [{"gender": "male"}]}
+def test6_compose_earnest_text_never_prints_for_male(mock_request_and_print):
+    request_user, any_print_calls = mock_request_and_print
+    request_user.return_value.json.return_value = {"results": [{"gender": "male"}]}
     compose_earnest_text()  # remove redundant assertion for return
-    mock_print.assert_not_called()
+    any_print_calls.assert_not_called()
 
 
 
